@@ -33,6 +33,7 @@ module.exports = function(image, opts) {
       if (!opts.offline) return cb(null, id+'.c.'+req.headers.host)
 
       var proxy = net.createServer(function(socket) {
+          //TODO need load-balance,choose a DOCKER_HOST
         pump(socket, net.connect(httpPort, DOCKER_HOST), socket)
       })
 
@@ -49,7 +50,11 @@ module.exports = function(image, opts) {
       freeport(function(err, httpPort) {
         if (err) return connection.destroy()
         startProxy(httpPort, function(err, subdomain, proxy) {
-          if (err) return connection.destroy()
+          if (err) {
+              console.log("create start proxy error");
+              console.log(err);
+              return connection.destroy();
+          }
 
           var container = containers[id] = {
             id: id,
@@ -78,7 +83,10 @@ module.exports = function(image, opts) {
           if (persist) dopts.volumes['/tmp/'+id] = '/root'
           if (opts.trusted) dopts.volumes['/var/run/docker.sock'] = '/var/run/docker.sock'
 
+            //TODO replace image with you wanted
           pump(stream, docker(image, dopts), stream, function(err) {
+              console.log('error in create docker');
+              console.log(err);
             if (proxy) proxy.close()
             server.emit('kill', container)
             delete containers[id]
