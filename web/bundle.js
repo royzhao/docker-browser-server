@@ -3153,8 +3153,6 @@ Readable.prototype.pipe = function(dest, pipeOpts) {
   // if the dest has an error, then stop piping into it.
   // however, don't suppress the throwing behavior for this.
   function onerror(er) {
-      console.log('dest error');
-      console.log(er);
     unpipe();
     dest.removeListener('error', onerror);
     if (EE.listenerCount(dest, 'error') === 0)
@@ -4407,8 +4405,6 @@ Stream.prototype.pipe = function(dest, options) {
 
   // don't leave dangling pipes when there are errors.
   function onerror(er) {
-      console.log('dangling pipes error');
-      console.log(er);
     cleanup();
     if (EE.listenerCount(this, 'error') === 0) {
       throw er; // Unhandled stream error in pipe.
@@ -12866,7 +12862,6 @@ function WebSocketStream(target, protocols) {
   }
   
   function socketEnd(done) {
-      console.log('end');
     socket.close()
     done()
   }
@@ -12875,20 +12870,16 @@ function WebSocketStream(target, protocols) {
     stream.setReadable(proxy)
     stream.setWritable(proxy)
   }
-  
-  function onclose(data) {
-      console.log('close');
-      console.log(data)
+
+  function onclose() {
     stream.destroy()
   }
   
   function onerror(err) {
-      console.log(err);
     stream.destroy(err)
   }
   
   function onmessage(event) {
-      console.log(event);
     var data = event.data
     if (data instanceof ArrayBuffer) data = new Buffer(new Uint8Array(data))
     proxy.push(data)
