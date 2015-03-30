@@ -96,6 +96,7 @@ module.exports = function(image, opts) {
                     var container = containers[id] = {
                         id: id,
                         image: image,
+                        docker_run: null,
                         connection:connection,
                         host: 'http://'+subdomain,
                         ports: {http:httpPort, fs:filesPort}
@@ -113,7 +114,8 @@ module.exports = function(image, opts) {
                         env: {
                             CONTAINER_ID: container.id,
                             HOST: container.host,
-                            PORT: 80
+                            PORT: 80,
+                            CONTAINER_OBJ: container
                         },
                         ports: ports,
                         volumes: opts.volumes || {}
@@ -187,12 +189,22 @@ module.exports = function(image, opts) {
     next()
   })
 
+
     //TODO check container is exist
   server.get('/user/{userid}/{imagename}',function(req,res,next){
         var id = req.params.userid
         var image = req.params.imagename
         console.log(id)
         console.log(image)
+      console.log('second')
+        next()
+    })
+    server.get('/user/{userid}/{imagename}',function(req,res,next){
+        //var id = req.params.userid
+        //var image = req.params.imagename
+        //console.log(id)
+        //console.log(image)
+        console.log('first')
         next()
     })
   server.get('/bundle.js', '/-/bundle.js')
