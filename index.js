@@ -56,6 +56,7 @@ module.exports = function(image, opts) {
       var stream = websocket(connection)
       //check is exists
     var container = containers.hasOwnProperty(id) && containers[id]
+      //console.log(container)
     if (container){//request('http://'+DOCKER_HOST+':'+container.ports.http)
         if(container.image=== image){
             console.log("already open one!");
@@ -158,12 +159,13 @@ module.exports = function(image, opts) {
   })
     //TODO check docker containers is exist
 
-  //server.get('/containers/{id}', function(req, res) {
-  //  var id = req.params.id
-  //  var container = containers.hasOwnProperty(id) && containers[id]
-  //  if (!container) return res.error(404, 'Could not find container')
-  //  res.send(container)
-  //})
+  server.get('/containers/{id}', function(req, res) {
+    var id = req.params.id
+    var container = containers.hasOwnProperty(id) && containers[id]
+    if (!container) return res.error(404, 'Could not find container')
+      //console.log(contain)
+    return res.send({'ID':container.docker_run.id})
+  })
   //
   //server.all('/http/{id}/*', function(req, res) {
   //  var id = req.params.id
@@ -172,9 +174,6 @@ module.exports = function(image, opts) {
   //  if (!container) return res.error(404, 'Could not find container')
   //  pump(req, request('http://'+DOCKER_HOST+':'+container.ports.http+url), res)
   //})
-  server.get('/container/id',function(req, res) {
-    
-  }
   //server.all('/files/{id}/*', function(req, res) {
   //  var id = req.params.id
   //  var url = req.url.slice(('/files/'+id).length)
@@ -182,7 +181,8 @@ module.exports = function(image, opts) {
   //  if (!container) return res.error(404, 'Could not find container')
   //  pump(req, request('http://'+DOCKER_HOST+':'+container.ports.fs+url), res)
   //})
-
+  //TODO add commit function(maybe by golang), first stop the container and then commit
+  //the reason why do not use this project is that commit is a different operation to create
   server.all(function(req, res, next) {
     if (!opts.offline) return next()
     var id = req.connection.address().address
@@ -190,8 +190,6 @@ module.exports = function(image, opts) {
     //if (container) return pump(req, request('http://'+DOCKER_HOST+':'+container.ports.http+req.url), res)
     next()
   })
-
-
     //TODO check container is exist
   server.get('/user/{userid}/{imagename}',function(req,res,next){
         var id = req.params.userid
@@ -212,6 +210,7 @@ module.exports = function(image, opts) {
   server.get('/bundle.js', '/-/bundle.js')
   server.get('/index.html', '/-/index.html')
   server.get('/user/{userid}/{imagename}', '/-/index.html')
+  //server.get('/containers/{id}','/-/index.html')
 
 
   return server
