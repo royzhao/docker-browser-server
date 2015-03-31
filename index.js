@@ -172,7 +172,9 @@ module.exports = function(image, opts) {
   //  if (!container) return res.error(404, 'Could not find container')
   //  pump(req, request('http://'+DOCKER_HOST+':'+container.ports.http+url), res)
   //})
-
+  server.get('/container/id',function(req, res) {
+    
+  }
   //server.all('/files/{id}/*', function(req, res) {
   //  var id = req.params.id
   //  var url = req.url.slice(('/files/'+id).length)
