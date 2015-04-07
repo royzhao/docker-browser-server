@@ -6058,7 +6058,10 @@ module.exports = function(opts) {
     })
 
     input.on('data', function(data) {
-      if (data.type === 'stderr' || data.type === 'stdout') return term.write(data.data)
+      if (data.type === 'stderr' || data.type === 'stdout'){
+          console.log(data)
+          return term.write(data.data)
+      }
     })
 
     term.open(elem)
@@ -6073,9 +6076,19 @@ module.exports = function(opts) {
       result.emit('title', title)
     })
 
+    result.on('error',function(err){
+        console.log(err)
+    })
     result.on('close', function() {
       off(window, 'resize', onresize)
-      term.destroy()
+
+      term.write('连接被关闭!' +
+      '\n 可能的原因有如下' +
+      '\n1)已经打开了一个终端' +
+      '\n2)刚刚托取image完成,您可以刷新这个页面来重新连接')
+      //term.destroy()
+        //TODO change ui reload pag
+        //window.location.reload()
     })
 
     return result
@@ -12860,7 +12873,7 @@ function WebSocketStream(target, protocols) {
     stream.setReadable(proxy)
     stream.setWritable(proxy)
   }
-  
+
   function onclose() {
     stream.destroy()
   }
@@ -12982,7 +12995,7 @@ var url = require('url')
 
 var u = url.parse(location.toString(), true)
 var terminal = docker()
-var url = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host+'/'+(u.query.id || '')
+var url = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host+u.path+'/'+(u.query.id || '')
 
 pump(terminal, websocket(url), terminal)
 terminal.appendTo(document.getElementById('console'))
