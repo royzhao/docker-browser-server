@@ -12,6 +12,8 @@ var path = require('path')
 var pump = require('pump')
 var cors = require('cors')
 var net = require('net')
+var xtend = require('xtend')
+var run = require('docker-run')
 
 module.exports = function(image, opts) {
   if (!opts) opts = {}
@@ -21,6 +23,65 @@ module.exports = function(image, opts) {
   var server = root()
   var wss = new WebSocketServer({server:server})
   var containers = {}
+  var run_containers = {}
+  var search_run_containers = function(res,image_id,cb){
+      var container = run_containers[image_id]
+      if(container != null) {
+          console.log(container)
+          if(container.host == null && container.status ==1)
+            cb(res,{message:container.status_msg,code:3},null)
+          else{
+              cb(res,null,container)
+          }
+      }
+      else{
+              //create one
+              var con = run_containers[image_id] = {
+                  image_id:image_id,
+                  TTL:180,
+                  host:null,
+                  port:4470,
+                  status:1,
+                  status_msg:'pulling image'
+              }
+              var child = run(image_id, xtend(opts, {
+                  tty: false,
+                  argv:["/run/docker-run"],
+                  volumes:{
+                      "/opt/docker-run/":"/run/"
+                  }
+              }))
+
+              //child.on('exit', function() {
+              //  //pull over
+              //
+              //})
+              child.on('error',function(err){
+                  console.log('error in pull')
+                  con.status_msg = 'pull is failed,maybe image is not exists!'
+              })
+              child.on('pbegin',function(){
+                  console.log('begin pull image')
+                  cb(res,{message:"pulling image"+image_id},null)
+              })
+
+              child.on('pend',function(){
+                  con.status_msg = 'pull is successful!'
+                  con.status = 2;
+              })
+              child.on('json',function(json){
+                  var con = run_containers[image_id]
+                  con.host = json.NetworkSettings.IPAddress
+                  cb(res,null,con)
+              })
+
+              child.on('error', function(err) {
+                  //create error
+                  cb(res,err,null)
+              })
+
+          }
+      }
 
   wss.on('connection', function(connection) {
     var req = connection.upgradeReq
@@ -61,6 +122,9 @@ module.exports = function(image, opts) {
             console.log("already open one!");
             connection.close();
             return
+
+
+
         }else{
             console.log("kill one!");
             container.connection.close();
@@ -89,7 +153,6 @@ module.exports = function(image, opts) {
                 startProxy(httpPort, function(err, subdomain, proxy) {
                     if (err) {
                         console.log("create start proxy error");
-                        console.log(err);
                         return connection.destroy();
                     }
 
@@ -127,7 +190,6 @@ module.exports = function(image, opts) {
                     //TODO replace image with you wanted
                     pump(stream, docker(image, dopts), stream, function(err) {
                         console.log('error in create docker');
-                        console.log(err);
                         if (proxy) proxy.close()
                         server.emit('kill', container)
                         delete containers[id]
@@ -191,21 +253,22 @@ module.exports = function(image, opts) {
 
 
     //TODO check container is exist
-  server.get('/user/{userid}/{imagename}',function(req,res,next){
-        var id = req.params.userid
+  server.post('/runner/{imagename}',function(req,res,next){
         var image = req.params.imagename
-        console.log(id)
-        console.log(image)
-      console.log('second')
-        next()
-    })
-    server.get('/user/{userid}/{imagename}',function(req,res,next){
-        //var id = req.params.userid
-        //var image = req.params.imagename
-        //console.log(id)
-        //console.log(image)
-        console.log('first')
-        next()
+        console.log("runner image is :"+image)
+      //find a image
+      search_run_containers(res,image,function(res,err,con){
+          if(res.finished){
+              return
+          }else{
+              if(err){
+                  res.send(err)
+              }else{
+                  return pump(req, request('http://'+con.host+':'+con.port+'/api/coderunner'), res)
+              }
+          }
+
+      })
     })
   server.get('/bundle.js', '/-/bundle.js')
   server.get('/index.html', '/-/index.html')
