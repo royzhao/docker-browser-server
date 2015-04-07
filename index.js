@@ -30,7 +30,7 @@ module.exports = function(image, opts) {
     //TODO add user id
     //get userid and imagename
     var params = url.split('/')
-      if(params.length<3){
+      if(params.length<4){
           //close ws
           console.log("error params");
           connection.close();
@@ -47,6 +47,8 @@ module.exports = function(image, opts) {
 
       //get image and check it
       var image = params[2]
+      var tag = params[3]
+      image = image + ":" + tag
       if(false){
           //close ws
           console.log("invalid image!");
@@ -209,7 +211,7 @@ module.exports = function(image, opts) {
     })
   server.get('/bundle.js', '/-/bundle.js')
   server.get('/index.html', '/-/index.html')
-  server.get('/user/{userid}/{imagename}', '/-/index.html')
+  server.get('/user/{userid}/{imagename}/{tag}', '/-/index.html')
   //server.get('/containers/{id}','/-/index.html')
 
 
