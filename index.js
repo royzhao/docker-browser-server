@@ -15,6 +15,11 @@ var net = require('net')
 var xtend = require('xtend')
 var run = require('docker-run')
 
+var docker_hosts_array=[
+    '192.168.0.33:4243',
+    '192.168.0.35:4243'
+]
+var load_flag = 0
 module.exports = function(image, opts) {
   if (!opts) opts = {}
 
@@ -49,7 +54,8 @@ module.exports = function(image, opts) {
                   argv:["/run/docker-run"],
                   volumes:{
                       "/opt/docker-run/":"/run/"
-                  }
+                  },
+                  host:docker_hosts_array[load_flag]
               }))
 
               //child.on('exit', function() {
@@ -122,9 +128,6 @@ module.exports = function(image, opts) {
             console.log("already open one!");
             connection.close();
             return
-
-
-
         }else{
             console.log("kill one!");
             container.connection.close();
@@ -172,6 +175,7 @@ module.exports = function(image, opts) {
                     ports[httpPort] = 80
                     ports[filesPort] = 8441
 
+                    load_flag =((load_flag+1)%2)
                     var dopts = {
                         tty: opts.tty === undefined ? true : opts.tty,
                         env: {
@@ -181,6 +185,7 @@ module.exports = function(image, opts) {
                             CONTAINER_OBJ: container
                         },
                         ports: ports,
+                        host: docker_hosts_array[load_flag],
                         volumes: opts.volumes || {}
                     }
 
@@ -218,7 +223,6 @@ module.exports = function(image, opts) {
   server.get('/-/*', function(req, res) {
     send(req, req.params.glob, {root:path.join(__dirname, 'web')}).pipe(res)
   })
-    //TODO check docker containers is exist
 
   //server.get('/containers/{id}', function(req, res) {
   //  var id = req.params.id
