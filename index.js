@@ -16,8 +16,10 @@ var xtend = require('xtend')
 var run = require('docker-run')
 
 var docker_hosts_array=[
-    '192.168.0.33:4243',
-    '192.168.0.35:4243'
+    //'192.168.0.33:4243',
+    //'192.168.0.35:4243'
+    '127.0.0.1:4243',
+    '127.0.0.1:4243'
 ]
 var load_flag = 0
 module.exports = function(image, opts) {
@@ -34,7 +36,7 @@ module.exports = function(image, opts) {
       if(container != null) {
           console.log(container)
           if(container.host == null && container.status ==1)
-            cb(res,{message:container.status_msg,code:3},null)
+            cb(res,{message:container.status_msg,code:container.status},null)
           else{
               cb(res,null,container)
           }
@@ -78,7 +80,9 @@ module.exports = function(image, opts) {
               child.on('json',function(json){
                   var con = run_containers[image_id]
                   con.host = json.NetworkSettings.IPAddress
-                  cb(res,null,con)
+                  con.status_msg = 'start is successful!'
+                  con.status = 2;
+                  cb(res,{message:con.status_msg,code:con.status},null)
               })
 
               child.on('error', function(err) {
