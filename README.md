@@ -20,4 +20,6 @@ git clone git@ali.peilong.me:coderun/docker-run.git
 cd docker-run
 npm install
 ```
+run command
+node bin.js 127.0.0.1:6367(this is redis addr)
 

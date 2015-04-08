@@ -22,11 +22,12 @@ var docker_hosts_array=[
     '127.0.0.1:4243'
 ]
 var load_flag = 0
-module.exports = function(image, opts) {
+module.exports = function(redis_addr, opts) {
+  var image = "ubuntu"
   if (!opts) opts = {}
 
   var DOCKER_HOST = opts.docker || (process.env.DOCKER_HOST || '127.0.0.1').replace(/^.+:\/\//, '').replace(/:\d+$/, '').replace(/^\/.+$/, '127.0.0.1')
-
+  var REDIS_ADDR = redis_addr ||'127.0.0.1:6379'
   var server = root()
   var wss = new WebSocketServer({server:server})
   var containers = {}
@@ -57,6 +58,10 @@ module.exports = function(image, opts) {
                   volumes:{
                       "/opt/docker-run/":"/run/"
                   },
+                  env:{
+                    "REDIS_ADDR":REDIS_ADDR
+                  }
+                  ,
                   host:docker_hosts_array[load_flag]
               }))
 
