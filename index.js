@@ -48,7 +48,10 @@ module.exports = function(image, opts) {
       //get image and check it
       var image = params[2]
       var tag = params[3]
-      image = image + ":" + tag
+      if(tag!="latest") {
+          image = "127.0.0.1:5000/" + image;
+      }
+      image = image + ":" + tag;
       if(false){
           //close ws
           console.log("invalid image!");
