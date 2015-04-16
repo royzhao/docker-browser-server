@@ -33,7 +33,6 @@ module.exports = function(redis_addr, opts) {
           port:httpPort
       }
       if(container != null) {
-          console.log(container)
           if(container.status ==1){
               cb(res,{message:container.status_msg,code:container.status},null)
               return
@@ -71,7 +70,7 @@ module.exports = function(redis_addr, opts) {
           container.status = 2;
       })
       child.on('json',function(json){
-          instance.container_id = json
+          instance.container_id = json.Config.Hostname
           container.status_msg = 'start is successful!'
           container.status = 3;
           cb(res,null,instance)
@@ -79,9 +78,11 @@ module.exports = function(redis_addr, opts) {
 
       child.on('error', function(err) {
           //create error
-          console.log('error in pull')
-          container.status_msg = 'pull is failed,maybe image is not exists!'
-          cb(res,err,null)
+          container.status_msg = 'pull is failed!';
+          if(err.message){
+              container.status_msg+= 'reason:['+err.message+']';
+          }
+          cb(res,container,null)
       })
 
 
