@@ -15,15 +15,9 @@ var net = require('net')
 var xtend = require('xtend')
 var run = require('docker-run')
 
-var docker_hosts_array=[
-    //'192.168.0.33:4243',
-    //'192.168.0.35:4243'
-    '127.0.0.1:4243',
-    '127.0.0.1:4243'
-]
-var load_flag = 0
+var docker_hosts='127.0.0.1:4243'
 module.exports = function(redis_addr, opts) {
-  var image = "ubuntu"
+  var image = "ubuntu";
   if (!opts) opts = {}
 
   var DOCKER_HOST = opts.docker || (process.env.DOCKER_HOST || '127.0.0.1').replace(/^.+:\/\//, '').replace(/:\d+$/, '').replace(/^\/.+$/, '127.0.0.1')
@@ -32,70 +26,65 @@ module.exports = function(redis_addr, opts) {
   var wss = new WebSocketServer({server:server})
   var containers = {}
   var run_containers = {}
-  var search_run_containers = function(res,image_id,cb){
+  var search_run_containers = function(res,image_id,httpPort,cb){
       var container = run_containers[image_id]
+      var instance = {
+          container_id:null,
+          port:httpPort
+      }
       if(container != null) {
           console.log(container)
-          if(container.host == null && container.status ==1)
-            cb(res,{message:container.status_msg,code:container.status},null)
-          else{
-              cb(res,null,container)
+          if(container.status ==1){
+              cb(res,{message:container.status_msg,code:container.status},null)
+              return
           }
+
       }
       else{
-              //create one
-              var con = run_containers[image_id] = {
-                  image_id:image_id,
-                  TTL:180,
-                  host:null,
-                  port:4470,
-                  status:1,
-                  status_msg:'pulling image'
-              }
-              var child = run(image_id, xtend(opts, {
-                  tty: false,
-                  argv:["/run/docker-run"],
-                  volumes:{
-                      "/opt/docker-run/":"/run/"
-                  },
-                  env:{
-                    "REDIS_ADDR":REDIS_ADDR
-                  }
-                  ,
-                  host:docker_hosts_array[load_flag]
-              }))
-
-              //child.on('exit', function() {
-              //  //pull over
-              //
-              //})
-              child.on('error',function(err){
-                  console.log('error in pull')
-                  con.status_msg = 'pull is failed,maybe image is not exists!'
-              })
-              child.on('pbegin',function(){
-                  console.log('begin pull image')
-                  cb(res,{message:"pulling image"+image_id},null)
-              })
-
-              child.on('pend',function(){
-                  con.status_msg = 'pull is successful!'
-                  con.status = 2;
-              })
-              child.on('json',function(json){
-                  var con = run_containers[image_id]
-                  con.host = json.NetworkSettings.IPAddress
-                  con.status_msg = 'start is successful!'
-                  con.status = 2;
-                  cb(res,{message:con.status_msg,code:con.status},null)
-              })
-
-              child.on('error', function(err) {
-                  //create error
-                  cb(res,err,null)
-              })
-
+          container = run_containers[image_id] = {
+              image_id:image_id,
+              status:1,
+              status_msg:'pulling image'
           }
+      }
+      //create one
+      var child = run(image_id, xtend(opts, {
+          tty: false,
+          argv:["/run/docker-run"],
+          volumes:{
+              "/opt/docker-run/":"/run/"
+          },
+          env:{
+            "REDIS_ADDR":REDIS_ADDR
+          },
+          host:docker_hosts,
+          ports: {httpPort:4470}
+      }))
+
+      child.on('pbegin',function(){
+          console.log('begin pull image')
+          cb(res,{message:"pulling image"+image_id},null)
+      })
+
+      child.on('pend',function(){
+          container.status_msg = 'pull is successful!'
+          container.status = 2;
+      })
+      child.on('json',function(json){
+          instance.container_id = json
+          container.status_msg = 'start is successful!'
+          container.status = 3;
+          cb(res,null,instance)
+      })
+
+      child.on('error', function(err) {
+          //create error
+          console.log('error in pull')
+          container.status_msg = 'pull is failed,maybe image is not exists!'
+          cb(res,err,null)
+      })
+
+
       }
 
   wss.on('connection', function(connection) {
@@ -190,7 +179,6 @@ module.exports = function(redis_addr, opts) {
                     ports[httpPort] = 80
                     ports[filesPort] = 8441
 
-                    load_flag =((load_flag+1)%2)
                     var dopts = {
                         tty: opts.tty === undefined ? true : opts.tty,
                         env: {
@@ -200,7 +188,7 @@ module.exports = function(redis_addr, opts) {
                             CONTAINER_OBJ: container
                         },
                         ports: ports,
-                        host: docker_hosts_array[load_flag],
+                        host: docker_hosts,
                         volumes: opts.volumes || {}
                     }
 
@@ -246,21 +234,6 @@ module.exports = function(redis_addr, opts) {
       //console.log(contain)
     return res.send({'ID':container.docker_run.id})
   })
-  //
-  //server.all('/http/{id}/*', function(req, res) {
-  //  var id = req.params.id
-  //  var url = req.url.slice(('/http/'+id).length)
-  //  var container = containers.hasOwnProperty(id) && containers[id]
-  //  if (!container) return res.error(404, 'Could not find container')
-  //  pump(req, request('http://'+DOCKER_HOST+':'+container.ports.http+url), res)
-  //})
-  //server.all('/files/{id}/*', function(req, res) {
-  //  var id = req.params.id
-  //  var url = req.url.slice(('/files/'+id).length)
-  //  var container = containers.hasOwnProperty(id) && containers[id]
-  //  if (!container) return res.error(404, 'Could not find container')
-  //  pump(req, request('http://'+DOCKER_HOST+':'+container.ports.fs+url), res)
-  //})
   //TODO add commit function(maybe by golang), first stop the container and then commit
   //the reason why do not use this project is that commit is a different operation to create
   server.all(function(req, res, next) {
@@ -275,18 +248,25 @@ module.exports = function(redis_addr, opts) {
         var image = req.params.imagename
         console.log("runner image is :"+image)
       //find a image
-      search_run_containers(res,image,function(res,err,con){
-          if(res.finished){
-              return
-          }else{
-              if(err){
-                  res.send(err)
-              }else{
-                  return pump(req, request('http://'+con.host+':'+con.port+'/api/coderunner'), res)
-              }
+      freeport(function(err, httpPort){
+          if(err){
+              res.send(err)
           }
+          search_run_containers(res,image,httpPort,function(res,err,con){
+              if(res.finished){
+                  return
+              }else{
+                  if(err){
+                      res.send(err)
+                  }else{
+                      //return pump(req, request('http://'+con.host+':'+con.port+'/api/coderunner'), res)
+                        return res.send(con)
+                  }
+              }
 
+          })
       })
+
     })
   server.get('/bundle.js', '/-/bundle.js')
   server.get('/index.html', '/-/index.html')
