@@ -106,7 +106,7 @@ module.exports = function(redis_addr, opts) {
     //TODO add user id
     //get userid and imagename
     var params = url.split('/')
-      if(params.length<3){
+      if(params.length<4){
           //close ws
           console.log("error params");
           connection.close();
@@ -123,6 +123,11 @@ module.exports = function(redis_addr, opts) {
 
       //get image and check it
       var image = params[2]
+      var tag = params[3]
+      if(tag!="latest") {
+          image = "127.0.0.1:5000/" + image;
+      }
+      image = image + ":" + tag;
       if(false){
           //close ws
           console.log("invalid image!");
@@ -132,6 +137,7 @@ module.exports = function(redis_addr, opts) {
       var stream = websocket(connection)
       //check is exists
     var container = containers.hasOwnProperty(id) && containers[id]
+      //console.log(container)
     if (container){//request('http://'+DOCKER_HOST+':'+container.ports.http)
         if(container.image=== image){
             console.log("already open one!");
@@ -233,12 +239,13 @@ module.exports = function(redis_addr, opts) {
     send(req, req.params.glob, {root:path.join(__dirname, 'web')}).pipe(res)
   })
 
-  //server.get('/containers/{id}', function(req, res) {
-  //  var id = req.params.id
-  //  var container = containers.hasOwnProperty(id) && containers[id]
-  //  if (!container) return res.error(404, 'Could not find container')
-  //  res.send(container)
-  //})
+  server.get('/containers/{id}', function(req, res) {
+    var id = req.params.id
+    var container = containers.hasOwnProperty(id) && containers[id]
+    if (!container) return res.error(404, 'Could not find container')
+      //console.log(contain)
+    return res.send({'ID':container.docker_run.id})
+  })
   //
   //server.all('/http/{id}/*', function(req, res) {
   //  var id = req.params.id
@@ -247,7 +254,6 @@ module.exports = function(redis_addr, opts) {
   //  if (!container) return res.error(404, 'Could not find container')
   //  pump(req, request('http://'+DOCKER_HOST+':'+container.ports.http+url), res)
   //})
-
   //server.all('/files/{id}/*', function(req, res) {
   //  var id = req.params.id
   //  var url = req.url.slice(('/files/'+id).length)
@@ -255,7 +261,8 @@ module.exports = function(redis_addr, opts) {
   //  if (!container) return res.error(404, 'Could not find container')
   //  pump(req, request('http://'+DOCKER_HOST+':'+container.ports.fs+url), res)
   //})
-
+  //TODO add commit function(maybe by golang), first stop the container and then commit
+  //the reason why do not use this project is that commit is a different operation to create
   server.all(function(req, res, next) {
     if (!opts.offline) return next()
     var id = req.connection.address().address
@@ -263,8 +270,6 @@ module.exports = function(redis_addr, opts) {
     //if (container) return pump(req, request('http://'+DOCKER_HOST+':'+container.ports.http+req.url), res)
     next()
   })
-
-
     //TODO check container is exist
   server.post('/runner/{imagename}',function(req,res,next){
         var image = req.params.imagename
@@ -285,7 +290,8 @@ module.exports = function(redis_addr, opts) {
     })
   server.get('/bundle.js', '/-/bundle.js')
   server.get('/index.html', '/-/index.html')
-  server.get('/user/{userid}/{imagename}', '/-/index.html')
+  server.get('/user/{userid}/{imagename}/{tag}', '/-/index.html')
+  //server.get('/containers/{id}','/-/index.html')
 
 
   return server
