@@ -5,8 +5,8 @@
   "main": "index.js",
   "dependencies": {
     "cors": "^2.4.2",
-    "docker-browser-console": "https://github.com/royzhao/docker-browser-console.git",
-    "docker-run":"https://github.com/royzhao/docker-run.git",
+    "docker-browser-console": "royzhao/docker-browser-console",
+    "docker-run":"royzhao/docker-run",
     "freeport": "^1.0.3",
     "minimist": "^1.1.0",
     "pump": "^1.0.0",
