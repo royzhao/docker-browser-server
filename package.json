@@ -6,7 +6,7 @@
   "dependencies": {
     "cors": "^2.4.2",
     "docker-browser-console": "royzhao/docker-browser-console",
-    "docker-run":"royzhao/docker-run#4.0.0",
+    "docker-run":"royzhao/docker-run#4.0.1",
     "freeport": "^1.0.3",
     "minimist": "^1.1.0",
     "pump": "^1.0.0",
