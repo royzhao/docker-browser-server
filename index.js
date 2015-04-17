@@ -15,7 +15,7 @@ var net = require('net')
 var xtend = require('xtend')
 var run = require('docker-run')
 
-var docker_hosts='docker2.peilong.me:4243'
+var docker_hosts='127.0.0.1:4243'
 module.exports = function(redis_addr, opts) {
   var image = "ubuntu";
   if (!opts) opts = {}
