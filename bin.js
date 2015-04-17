@@ -27,7 +27,6 @@ server.on('spawn', function(container) {
 })
 
 server.on('kill', function(container) {
-  console.log(container);
   console.log('Killing container (%s)', container.id)
 })
 
