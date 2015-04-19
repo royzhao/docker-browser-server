@@ -8,10 +8,10 @@ var argv = minimist(process.argv, {
   default: {port:process.env.PORT || 8080}
 })
 
-var redis_addr = argv._[2]
+var docker_addr = argv._[2]
 
-if (argv.help) {
-  console.log('Usage: docker-browser-server redis_addr [options]')
+if (argv.help || !docker_addr) {
+  console.log('Usage: docker-browser-server doker_addr [options]')
   console.log()
   console.log('  --port,    -p  [8080]          (port to listen on)')
   console.log('  --docker,  -d  [$DOCKER_HOST]  (optional host of the docker daemon)')
@@ -20,7 +20,7 @@ if (argv.help) {
   return process.exit(argv.help ? 0 : 1)
 }
 
-var server = docker(redis_addr, argv)
+var server = docker(docker_addr, argv)
 
 server.on('spawn', function(container) {
   console.log('Spawning new container (%s)', container.id)

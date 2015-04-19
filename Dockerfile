@@ -1,1 +1,8 @@
-from mafintosh/node:0.10.32
+from dockerfile/nodejs
+
+COPY . /src
+RUN cd /src; npm install
+
+EXPOSE 8080
+
+ENTRYPOINT ["nodejs","/src/bin.js"]

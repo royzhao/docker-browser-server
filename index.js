@@ -14,14 +14,14 @@ var cors = require('cors')
 var net = require('net')
 var xtend = require('xtend')
 var run = require('docker-run')
-
-var docker_hosts='127.0.0.1:4243'
-module.exports = function(redis_addr, opts) {
+var docker_hosts='docker2.peilong.me:4243'
+module.exports = function(docker_addr, opts) {
   var image = "ubuntu";
+  docker_hosts= docker_addr;
   if (!opts) opts = {}
 
   var DOCKER_HOST = opts.docker || (process.env.DOCKER_HOST || '127.0.0.1').replace(/^.+:\/\//, '').replace(/:\d+$/, '').replace(/^\/.+$/, '127.0.0.1')
-  var REDIS_ADDR = redis_addr ||'127.0.0.1:6379'
+  var REDIS_ADDR = 'redis.peilong.me:6379'
   var server = root()
   var wss = new WebSocketServer({server:server})
   var containers = {}
