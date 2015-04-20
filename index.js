@@ -14,14 +14,14 @@ var cors = require('cors')
 var net = require('net')
 var xtend = require('xtend')
 var run = require('docker-run')
-var docker_hosts='docker2.peilong.me:4243'
-module.exports = function(docker_addr, opts) {
+var docker_hosts='docker2.peilong.me'
+module.exports = function(redis_addr, opts) {
   var image = "ubuntu";
-  docker_hosts= docker_addr;
   if (!opts) opts = {}
 
-  var DOCKER_HOST = opts.docker || (process.env.DOCKER_HOST || '127.0.0.1').replace(/^.+:\/\//, '').replace(/:\d+$/, '').replace(/^\/.+$/, '127.0.0.1')
-  var REDIS_ADDR = 'redis.peilong.me:6379'
+  var DOCKER_PORT = opts.docker_port|| 4243
+    docker_hosts = opts.docker_host
+  var REDIS_ADDR = redis_addr||'redis.peilong.me:6379'
   var server = root()
   var wss = new WebSocketServer({server:server})
   var containers = {}
@@ -32,20 +32,25 @@ module.exports = function(docker_addr, opts) {
           container_id:null,
           port:httpPort
       }
+      console.log(container)
+      console.log(run_containers)
       if(container != null) {
-          if(container.status ==1){
+          if(container.status ==1 ){
               cb(res,{message:container.status_msg,code:container.status},null)
               return
           }
-
       }
       else{
           container = run_containers[image_id] = {
               image_id:image_id,
+              hosts:docker_hosts,
               status:1,
-              status_msg:'pulling image'
+              status_msg:'pulling image',
+              instances:[]
           }
       }
+      var ports = {}
+      ports[httpPort] = 4470
       //create one
       var child = run(image_id, xtend(opts, {
           tty: false,
@@ -56,8 +61,8 @@ module.exports = function(docker_addr, opts) {
           env:{
             "REDIS_ADDR":REDIS_ADDR
           },
-          host:docker_hosts,
-          ports: {httpPort:4470}
+          host:docker_hosts+":"+DOCKER_PORT,
+          ports: ports
       }))
 
       child.on('pbegin',function(){
@@ -73,6 +78,7 @@ module.exports = function(docker_addr, opts) {
           instance.container_id = json.Config.Hostname
           container.status_msg = 'start is successful!'
           container.status = 3;
+          container.instances.push(instance)
           cb(res,null,instance)
       })
 
@@ -189,7 +195,7 @@ module.exports = function(docker_addr, opts) {
                             CONTAINER_OBJ: container
                         },
                         ports: ports,
-                        host: docker_hosts,
+                        host: docker_hosts+":"+DOCKER_PORT,
                         volumes: opts.volumes || {}
                     }
 
@@ -244,10 +250,17 @@ module.exports = function(docker_addr, opts) {
     //if (container) return pump(req, request('http://'+DOCKER_HOST+':'+container.ports.http+req.url), res)
     next()
   })
+
+  server.get('/findrunner/{imagename}',function(req,res){
+       var image = req.params.imagename
+        console.log("find runner image is :"+image)
+        var container = run_containers[image];
+        res.send(container)
+  })
     //TODO check container is exist
-  server.post('/runner/{imagename}',function(req,res,next){
+  server.post('/createrunner/{imagename}',function(req,res,next){
         var image = req.params.imagename
-        console.log("runner image is :"+image)
+        console.log(" create runner image is :"+image)
       //find a image
       freeport(function(err, httpPort){
           if(err){
@@ -261,7 +274,7 @@ module.exports = function(docker_addr, opts) {
                       res.send(err)
                   }else{
                       //return pump(req, request('http://'+con.host+':'+con.port+'/api/coderunner'), res)
-                        return res.send(con)
+                       return res.send(con)
                   }
               }
 

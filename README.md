@@ -5,21 +5,35 @@ docker-browser
 安装步骤
 ```
 npm install
-cd node_modules
-git clone git@ali.peilong.me:coderun/docker-run.git
-cd docker-run
-npm install
-cd ../
-rm -rf docker-browser-console
-git clone git@ali.peilong.me:coderun/docker-browser-console.git
-cd docker-browser-console
-npm install
-cd node_modules
-rm -rf docker-run
-git clone git@ali.peilong.me:coderun/docker-run.git
-cd docker-run
-npm install
+```
+#API
+创建镜像的tty
+```
+/user/{userid}/{imagename}/{tag}
+
+```
+查找镜像的实例
+```
+/findrunner/{imagename}
+返回结果为
+{
+  image_id:镜像的名字 string,
+  hosts:docker的主机名 string,
+  status:状态 int 1表示正在pull镜像，2表示pull完成，3表示有事例在运行,
+  status_msg:说明状态的字符串 string,
+  instances:[
+    {
+        container_id:容器id string,
+        port:容器暴露出来的端口 int
+    }
+  ]
+}
+```
+创建镜像
+```
+/createrunner/{imagename}
+返回的对象和上面的一样
 ```
 run command
-node bin.js 127.0.0.1:6367(this is redis addr)
+node bin.js -r 127.0.0.1:6367(this is redis addr) -dh docker2.peilong.me -dp 4243
 

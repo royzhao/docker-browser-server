@@ -4,23 +4,23 @@ var minimist = require('minimist')
 var docker = require('./')
 
 var argv = minimist(process.argv, {
-  alias: {port:'p', docker:'d', help:'h'},
+  alias: {port:'p',redis_addr:'r',docker_host:'dh', docker_port:'dp', help:'h'},
   default: {port:process.env.PORT || 8080}
 })
 
-var docker_addr = argv._[2]
+var redis_addr = argv.redis_addr
 
-if (argv.help || !docker_addr) {
-  console.log('Usage: docker-browser-server doker_addr [options]')
+if (argv.help || !redis_addr || !argv.docker_host) {
+  console.log('Usage: docker-browser-server [options]')
   console.log()
   console.log('  --port,    -p  [8080]          (port to listen on)')
-  console.log('  --docker,  -d  [$DOCKER_HOST]  (optional host of the docker daemon)')
-  console.log('  --persist                      (allow persistance of /root in the containers)')
-  console.log('')
+  console.log('  --docker_host,  -dh')
+  console.log('  --docker_port,  -dp')
+  console.log('  --redis_addr,  -r')
   return process.exit(argv.help ? 0 : 1)
 }
 
-var server = docker(docker_addr, argv)
+var server = docker(redis_addr, argv)
 
 server.on('spawn', function(container) {
   console.log('Spawning new container (%s)', container.id)
