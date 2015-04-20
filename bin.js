@@ -10,7 +10,7 @@ var argv = minimist(process.argv, {
 
 var redis_addr = argv.redis_addr
 
-if (argv.help || !redis_addr || !argv.docker_host) {
+if (argv.help ||!argv.docker_host) {
   console.log('Usage: docker-browser-server [options]')
   console.log()
   console.log('  --port,    -p  [8080]          (port to listen on)')
