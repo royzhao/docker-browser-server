@@ -85,6 +85,8 @@ module.exports = function(redis_addr, opts) {
       child.on('error', function(err) {
           //create error
           container.status_msg = 'pull is failed!';
+          container.status = 4
+          console.log(err)
           if(err.message){
               container.status_msg+= 'reason:['+err.message+']';
           }
@@ -121,7 +123,7 @@ module.exports = function(redis_addr, opts) {
       var image = params[2]
       var tag = params[3]
       if(tag!="latest") {
-          image = "127.0.0.1:5000/" + image;
+          image = "docker2.peilong.me:5000/" + image;
       }
       image = image + ":" + tag;
       if(false){
