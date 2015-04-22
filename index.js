@@ -15,6 +15,7 @@ var net = require('net')
 var xtend = require('xtend')
 var run = require('docker-run')
 var docker_hosts='docker2.peilong.me'
+var docker_hub = 'docker2.peilong.me:5000'
 module.exports = function(redis_addr, opts) {
   var image = "ubuntu";
   if (!opts) opts = {}
@@ -52,7 +53,7 @@ module.exports = function(redis_addr, opts) {
       var ports = {}
       ports[httpPort] = 4470
       //create one
-      var child = run(image_id, xtend(opts, {
+      var child = run(docker_hub+"/"+image_id, xtend(opts, {
           tty: false,
           argv:["/run/docker-run"],
           volumes:{
@@ -85,7 +86,7 @@ module.exports = function(redis_addr, opts) {
       child.on('error', function(err) {
           //create error
           container.status_msg = 'pull is failed!';
-          container.status = 4
+          container.status = 6
           console.log(err)
           if(err.message){
               container.status_msg+= 'reason:['+err.message+']';
@@ -123,7 +124,7 @@ module.exports = function(redis_addr, opts) {
       var image = params[2]
       var tag = params[3]
       if(tag!="latest") {
-          image = "docker2.peilong.me:5000/" + image;
+          image = docker_hub+"/" + image;
       }
       image = image + ":" + tag;
       if(false){
