@@ -37,7 +37,7 @@ module.exports = function(redis_addr, opts) {
       console.log(run_containers)
       if(container != null) {
           if(container.status ==1 ){
-              cb(res,{message:container.status_msg,code:container.status},null)
+              cb(res,container,null)
               return
           }
       }
@@ -47,7 +47,7 @@ module.exports = function(redis_addr, opts) {
               hosts:docker_hosts,
               status:1,
               status_msg:'pulling image',
-              instances:[]
+              instances:null
           }
       }
       var ports = {}
@@ -67,20 +67,21 @@ module.exports = function(redis_addr, opts) {
       }))
 
       child.on('pbegin',function(){
-          console.log('begin pull image')
-          cb(res,{message:"pulling image"+image_id},null)
+          console.log('begin pull image');
+          cb(res,container,null)
       })
 
       child.on('pend',function(){
           container.status_msg = 'pull is successful!'
           container.status = 2;
+          cb(res,container,null);
       })
       child.on('json',function(json){
           instance.container_id = json.Config.Hostname
           container.status_msg = 'start is successful!'
           container.status = 3;
-          container.instances.push(instance)
-          cb(res,null,instance)
+          container.instances = instance
+          cb(res,container,null)
       })
 
       child.on('error', function(err) {
